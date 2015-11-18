@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<widget id="NetworkDiagram.widget.NetworkDiagram" needsEntityContext="true" xmlns="http://www.mendix.com/widget/1.0/">
+    <name>NetworkDiagram</name>
+    <description>The description of this widget.</description>
+
+    <icon />
+
+    <properties>
+        <property key="nodeEntity" type="entity" required="true">
+            <caption>Entity type</caption>
+            <category>Network Configuration</category>
+            <description></description>
+        </property>
+        <property key="displayAttr" type="attribute" entityProperty="nodeEntity" required="true">
+            <caption>Display attribute</caption>
+            <category>Network Configuration</category>
+            <description>This attribute will be shown in the nodes.</description>
+            <attributeTypes>
+<!--
+                <attributeType name="AutoNumber"/>
+                <attributeType name="Boolean"/>
+                <attributeType name="Currency"/>
+                <attributeType name="DateTime"/>
+                <attributeType name="Enum"/>
+                <attributeType name="Float"/>
+                <attributeType name="Decimal"/>
+                <attributeType name="Integer"/>
+                <attributeType name="Long"/>
+-->
+                <attributeType name="String"/>
+            </attributeTypes>
+        </property>
+        <property key="constraint" type="entityConstraint" entityProperty="nodeEntity" required="false">
+            <caption>Constraint</caption>
+            <category>Network Configuration</category>
+            <description></description>
+        </property>
+        <property key="displayColor" type="string" defaultValue="" required="false">
+            <caption>Color</caption>
+            <category>Network Configuration</category>
+            <description>(CSS compatible color code, e.g.: rgb(242,242,242), #EEE ) </description>
+        </property>
+        <property key="mainNodeSize" type="integer" defaultValue="10" required="true">
+            <caption>Node Size</caption>
+            <category>Network Configuration</category>
+            <description></description>
+        </property>
+        <property key="relationList" type="object" isList="true" required="true">
+            <caption>2) Network</caption>
+			<category>Network Configuration</category>
+			<description>This is where all relationships between the nodes are configured. 
+At least 1 relationship should start at the same entity as the top-level entity. (sequence is irrelevant)</description>
+			<properties>
+                <property key="reference" type="string" defaultValue="" required="true">
+                    <caption>Reference</caption>
+                    <category>Configuration</category>
+                    <description></description>
+                </property>
+                <property key="usage" type="enumeration" required="true" defaultValue="Entity1usedIn2">
+                    <caption>Usage</caption>
+					<category>Configuration</category>
+					<description></description>
+                    <enumerationValues>
+                        <enumerationValue key="Entity1uses2">Uses</enumerationValue>
+                        <enumerationValue key="Entity1usedIn2">Used In</enumerationValue>
+                    </enumerationValues>
+				</property>
+                <property key="nodeEntity1" type="entity" required="true">
+                    <caption>Entity 1</caption>
+					<category>Configuration</category>
+					<description></description>
+				</property>
+                <property key="displayAttr1" type="attribute" entityProperty="nodeEntity1" required="false">
+                    <caption>Display attribute Entity1</caption>
+                    <category>Configuration</category>
+                    <description>(Only select this attribute if you chose usage option: 'Used In')</description>
+                    <attributeTypes>
+            <!--
+                        <attributeType name="AutoNumber"/>
+                        <attributeType name="Boolean"/>
+                        <attributeType name="Currency"/>
+                        <attributeType name="DateTime"/>
+                        <attributeType name="Enum"/>
+                        <attributeType name="Float"/>
+                        <attributeType name="Decimal"/>
+                        <attributeType name="Integer"/>
+                        <attributeType name="Long"/>
+            -->
+                        <attributeType name="String"/>
+                    </attributeTypes>
+                </property>
+                <property key="constraint1" type="entityConstraint" entityProperty="nodeEntity1" required="false">
+                    <caption>Constraint Entity 1</caption>
+                    <category>Configuration</category>
+                    <description></description>
+                </property>
+				<property key="nodeEntity2" type="entity" entityProperty="nodeEntity1" isPath="yes" pathType="reference" required="true">
+					<caption>Entity 2</caption>
+					<category>Configuration</category>
+					<description></description>
+				</property>
+                <property key="displayAttr2" type="attribute" entityProperty="nodeEntity2" required="false">
+                    <caption>Display attribute Entity2</caption>
+                    <category>Configuration</category>
+                    <description>(Only select this attribute if you chose usage option: 'Uses')</description>
+                    <attributeTypes>
+            <!--
+                        <attributeType name="AutoNumber"/>
+                        <attributeType name="Boolean"/>
+                        <attributeType name="Currency"/>
+                        <attributeType name="DateTime"/>
+                        <attributeType name="Enum"/>
+                        <attributeType name="Float"/>
+                        <attributeType name="Decimal"/>
+                        <attributeType name="Integer"/>
+                        <attributeType name="Long"/>
+            -->
+                        <attributeType name="String"/>
+                    </attributeTypes>
+                </property>
+                <property key="constraint2" type="entityConstraint" entityProperty="nodeEntity2" required="false">
+                    <caption>Constraint Entity 2</caption>
+                    <category>Configuration</category>
+                    <description></description>
+                </property>
+                <property key="displayColor" type="string" defaultValue="" required="false">
+                    <caption>Color</caption>
+                    <category>Configuration</category>
+                    <description>(CSS compatible color code, e.g.: rgb(242,242,242), #EEE ) </description>
+				</property>
+                <property key="nodeSize" type="integer" defaultValue="10" required="true">
+                    <caption>Node Size</caption>
+                    <category>Configuration</category>
+                    <description></description>
+				</property>
+            </properties>
+        </property>
+        <property key="width" type="string" defaultValue="100%" required="false">
+            <caption>Width</caption>
+            <category>Common</category>
+            <description></description>
+        </property>	
+        <property key="height" type="string" defaultValue="500px" required="false">
+            <caption>Height</caption>
+            <category>Common</category>
+            <description></description>
+        </property>	
+<!--
+        <property key="mfToExecute" type="microflow" entityProperty="../entity" required="false" defaultValue="">
+            <caption>Microflow</caption>
+            <category>Behavior</category>
+            <description>The microflow to execute on click.</description>
+            <returnType type="Boolean" />
+        </property>
+-->
+    </properties>
+</widget>
+
