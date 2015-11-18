@@ -255,31 +255,35 @@ define([
         _fetchMicroflows: function(objs, config, refObjId, associationId ) {
             if( refObjId != null ) {
                 for( var i =0; i< objs.length;i++ ) {
+                    console.log( 'adding edge: ' + refObjId + ' - ' + objs[i].getGUID());
                     this.edges._addItem( {from: refObjId, to: objs[i].getGUID()} );
                 }
             }
             
+            var loadingId = config.entityName + (refObjId != null? refObjId:'');
+            
             //Only if the config 
-            if( this.loaded[associationId] <= 1 ) {
-                this.loaded[associationId] = 1;
+            if( this.loaded[loadingId] == null || this.loaded[loadingId] <= 1 ) {
+                this.loaded[loadingId] = 1;
+            }
+            var curEntityId = this.entityMap[associationId].entityName;
+            var refConfig = this.relationConfig[curEntityId];
 
-                var curEntityId = this.entityMap[associationId].entityName;
-                var refConfig = this.relationConfig[curEntityId];
-                
-                if( refConfig && refConfig.associations && refConfig.associations.length > 0 ) {
-                    for( var associationDetails in refConfig.associations ) {
-                        var config2 = refConfig.associations[associationDetails];
-                        var assName = refConfig.associations[associationDetails].assocationName,
-                            entityName = refConfig.associations[associationDetails].entityName,
-                            nextAssociationId = refConfig.associations[associationDetails].id;
-                        
-                        var relatedConfig = this.entityMap[nextAssociationId];
-                        
-                        if( !objs ) {
-                            this.loaded[nextAssociationId] = 2;
-                        }
-                        for( var objRef in objs ) {
-                            var obj = objs[objRef];
+            if( refConfig && refConfig.associations && refConfig.associations.length > 0 ) {
+                for( var associationDetails in refConfig.associations ) {
+                    var config2 = refConfig.associations[associationDetails];
+                    var assName = refConfig.associations[associationDetails].assocationName,
+                        entityName = refConfig.associations[associationDetails].entityName,
+                        nextAssociationId = refConfig.associations[associationDetails].id;
+
+                    var relatedConfig = this.entityMap[nextAssociationId];
+
+                    for( var objRef in objs ) {
+                        var obj = objs[objRef];
+                        var refLoadingId = entityName + obj.getGUID();
+                        if( this.loaded[refLoadingId] == null || this.loaded[refLoadingId] <= 1 ) {
+                            this.loaded[refLoadingId] = 1;
+                            
                             this._addNode(obj, config );
 
                             //default fetch
@@ -291,28 +295,20 @@ define([
                                 filter: filters,
                                 callback: lang.hitch(this, function (nextAssociationId, objConfig, refGuid, referencedObjs, ioArgs) {
                                     this._fetchMicroflows(referencedObjs, objConfig, refGuid, nextAssociationId);
-                                    this.loaded[nextAssociationId] = 2;
                                 }, nextAssociationId, relatedConfig, obj.getGUID())
                             });
-                            if( this.loaded[nextAssociationId] < 1 )
-                                this.loaded[nextAssociationId] = 1;
                         }
                     }
                 }
-                else {
-                    for( var objRef in objs ) {
-                        this._addNode(objs[objRef], config );
-                    }
-                }
-                
-                this.loaded[associationId] = 2;
             }
             else {
                 for( var objRef in objs ) {
-                    var obj = objs[objRef];
-                    this._addNode(obj, config);
+                    this._addNode(objs[objRef], config );
                 }
             }
+
+            this.loaded[loadingId] = 2;
+            
             
             if( this._allLoaded() ) {
                 // provide the data in the vis format
@@ -327,6 +323,7 @@ define([
         _addNode: function( obj, config) {
             this.isLoaded = false;
             if( !this.nodes._getItem( obj.getGUID()) ) {
+            	console.log( 'adding node: ' + obj.getGUID() + ' | label ' + obj.getAttribute(config.displayAttr) + ' | color: ' + config.color);
                 this.nodes._addItem({
                     id: obj.getGUID(), 
                     label: obj.getAttribute(config.displayAttr), 
@@ -357,9 +354,9 @@ define([
             this.loaded = [];
 			this.isLoaded = false;
             
-            for (var config in this.entityMap ) {
-                this.loaded[config] = 0;
-            }
+//            for (var config in this.entityMap ) {
+//                this.loaded[config] = 0;
+//            }
         },
 
         _renderNetwork: function(data) {
@@ -378,8 +375,8 @@ define([
                     scaling: {
                         min: 10,
                         max: 30,
-                        drawThreshold: 12,
-                        maxVisible: 20
+                        //drawThreshold: 12,
+                        //maxVisible: 20
                     },
                     font: {
                         size: 12,
@@ -390,7 +387,8 @@ define([
                     color:{inherit:true},
                     width: 0.15,
                     smooth: {
-                        type: 'continuous'
+                        type: 'discrete',
+                        roundness: 0.25
                     }
                 },
                 interaction: {
@@ -398,22 +396,30 @@ define([
                     tooltipDelay: 200,
                     selectConnectedEdges: true
                 },
-				repulsion: {
-					nodeDistance: 200 },
 
 				physics: {
 					enabled: true,
-					repulsion: {
-						centralGravity: 0.2,
-						springLength: 200,
-						springConstant: 0.05,
-						nodeDistance: 100,
-						damping: 0.09
-					},
-					stabilization: {
-						enabled: false,
-						iterations: 100
-					},
+                    "barnesHut": {
+                        "gravitationalConstant": -44178,
+                        "centralGravity": 0,
+                        "springLength": 140,
+                        "springConstant": 0.075,
+                        "damping": 0.25,
+                        "avoidOverlap": 0.92
+                    },
+                    "maxVelocity": 150,
+                    "minVelocity": 10.07
+//					repulsion: {
+//						centralGravity: 0.2,
+//						springLength: 200,
+//						springConstant: 0.05,
+//						nodeDistance: 100,
+//						damping: 0.09
+//					},
+//					stabilization: {
+//						enabled: false,
+//						iterations: 100
+//					},
 //                    forceAtlas2Based: {
 //                        gravitationalConstant: -50,
 //                        centralGravity: 0.01,
