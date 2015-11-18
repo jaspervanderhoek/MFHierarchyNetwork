@@ -40,10 +40,14 @@
             <category>Network Configuration</category>
             <description>(CSS compatible color code, e.g.: rgb(242,242,242), #EEE ) </description>
         </property>
-        <property key="mainNodeSize" type="integer" defaultValue="10" required="true">
+        <property key="mainNodeSize" type="attribute" defaultValue="" entityProperty="nodeEntity" required="true">
             <caption>Node Size</caption>
             <category>Network Configuration</category>
             <description></description>
+            <attributeTypes>
+                <attributeType name="Integer"/>
+                <attributeType name="Long"/>
+            </attributeTypes>
         </property>
         <property key="relationList" type="object" isList="true" required="true">
             <caption>2) Network</caption>
@@ -128,11 +132,15 @@ At least 1 relationship should start at the same entity as the top-level entity.
                     <category>Configuration</category>
                     <description>(CSS compatible color code, e.g.: rgb(242,242,242), #EEE ) </description>
 				</property>
-                <property key="nodeSize" type="integer" defaultValue="10" required="true">
+                <property key="nodeSize" type="attribute" defaultValue="" entityProperty="nodeEntity1" required="true">
                     <caption>Node Size</caption>
                     <category>Configuration</category>
                     <description></description>
-				</property>
+                    <attributeTypes>
+                        <attributeType name="Integer"/>
+                        <attributeType name="Long"/>
+                    </attributeTypes>
+                </property>
             </properties>
         </property>
         <property key="width" type="string" defaultValue="100%" required="false">

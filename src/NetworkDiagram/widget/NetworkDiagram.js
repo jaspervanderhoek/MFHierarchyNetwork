@@ -218,7 +218,9 @@ define([
         disable: function() {},
 
         // mxui.widget._WidgetBase.resize is called when the page's layout is recalculated. Implement to do sizing calculations. Prefer using CSS instead.
-        resize: function(box) {},
+        resize: function(box) {
+            this.domNode.style.height=window.innerHeight + 'px';
+        },
 
         // mxui.widget._WidgetBase.uninitialize is called when the widget is destroyed. Implement to do special tear-down work.
         uninitialize: function() {
@@ -323,14 +325,15 @@ define([
         _addNode: function( obj, config) {
             this.isLoaded = false;
             if( !this.nodes._getItem( obj.getGUID()) ) {
-            	console.log( 'adding node: ' + obj.getGUID() + ' | label ' + obj.getAttribute(config.displayAttr) + ' | color: ' + config.color);
+                var nodeSize = (config.nodeSize != null ? ( isNaN(config.nodeSize) ? obj.getAttribute(config.nodeSize) : config.nodeSize ) : 10 );
+            	console.log( 'adding node: ' + obj.getGUID() + ' | label ' + obj.getAttribute(config.displayAttr) + ' | color: ' + config.color + ' | size: ' + nodeSize);
                 this.nodes._addItem({
                     id: obj.getGUID(), 
                     label: obj.getAttribute(config.displayAttr), 
                     title: ( config.tooltipAttr != null ? obj.getAttribute(config.tooltipAttr) : '<b>' + obj.getAttribute(config.displayAttr) + '</b>'), 
                     color: config.color,
                     font: { size: 6 }, 
-                    size: (config.nodeSize != null ? config.nodeSize : 10 )
+                    value: nodeSize
                 } );
             }
             
@@ -366,8 +369,8 @@ define([
 				
 			this.isLoaded =true;
             var options = {
-                layout: { randomSeed: 2 }, 
-                
+                layout: { randomSeed: 2 },
+
 //				autoResize: true,
 //				height: '100%',
                 nodes: {
@@ -432,10 +435,12 @@ define([
             };
 
             this.domNode.style.width=this.width;
-            this.domNode.style.height=this.height;
+//            this.domNode.style.height=this.height;
+            this.domNode.style.height= window.innerHeight + 'px';
+            
             // initialize your network!
             var network = new vis.Network(this.domNode, data, options);   
-            
+
 //          network.on("click",neighbourhoodHighlight);
 
 //			network.on("stabilizationProgress", function(params) {
