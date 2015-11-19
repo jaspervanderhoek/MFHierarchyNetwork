@@ -3,8 +3,18 @@
     <name>NetworkDiagram</name>
     <description>The description of this widget.</description>
 
-    <icon />
-
+    <icon>
+        iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABv0lEQVRIibXWv2oUURQG8F+WxUpk
+        ySPIsqQIQSxMIyIYQzofxl4IlrJYiC+QFwj+QYWQImgjFmLYQowgaUVMSLpERot7lr17mVl3s3pg
+        uMzlO9937j1/ZpjOnuC0eJ5O49hu2G/hSqw/sYLLBWY51k6sJ6jqiEpbwzY+4QO6EwLsBuYjnoXv
+        RIEHeI3b+ILn+D5B4Ade4ituhu9mE3gN53iLpUJ8B7+LZ7cIdCl8z/OTLGSA7Yh8FZ8L8Q3czUSr
+        EHhV4Hp4j3e4J8tJB98i0rq8TGut4DgMzjGyXxioqYQZrMI+ztQE2jUquXmsI6u8BamJVjLAGfp4
+        MyPxBu7jUrY3IHVlWSH9GcnhUQ3PaVNCL5Lo2qkwT8VMZU0CF6mkWp82towGF6lcd+vAf7EdXDN+
+        VYMc8F/KNN88wON/INAPrkXGc9CWrmreUbEs9UI1JCV9LPZxSxpYdcPuToavpDsvm7GLG9KwOynV
+        83HdM/u47hmN6/WmI24G4ChI+1J+9moE9qTPaj+wR+H7sIl8aOt4IY3cgzh2k8DVwByGT2PkpbUi
+        8sV4bxIQuI6G4mj6q6hwnL0PcL3ADJvo2AT7Az53gAPAT+coAAAAAElFTkSuQmCC
+    </icon>
+    
     <properties>
         <property key="nodeEntity" type="entity" required="true">
             <caption>Entity type</caption>
@@ -16,17 +26,14 @@
             <category>Network Configuration</category>
             <description>This attribute will be shown in the nodes.</description>
             <attributeTypes>
-<!--
-                <attributeType name="AutoNumber"/>
-                <attributeType name="Boolean"/>
-                <attributeType name="Currency"/>
-                <attributeType name="DateTime"/>
-                <attributeType name="Enum"/>
-                <attributeType name="Float"/>
-                <attributeType name="Decimal"/>
-                <attributeType name="Integer"/>
-                <attributeType name="Long"/>
--->
+                <attributeType name="String"/>
+            </attributeTypes>
+        </property>
+        <property key="tooltipAttr" type="attribute" entityProperty="nodeEntity" required="false">
+            <caption>Tooltip attribute</caption>
+            <category>Network Configuration</category>
+            <description></description>
+            <attributeTypes>
                 <attributeType name="String"/>
             </attributeTypes>
         </property>
@@ -79,17 +86,14 @@ At least 1 relationship should start at the same entity as the top-level entity.
                     <category>Configuration</category>
                     <description>(Only select this attribute if you chose usage option: 'Used In')</description>
                     <attributeTypes>
-            <!--
-                        <attributeType name="AutoNumber"/>
-                        <attributeType name="Boolean"/>
-                        <attributeType name="Currency"/>
-                        <attributeType name="DateTime"/>
-                        <attributeType name="Enum"/>
-                        <attributeType name="Float"/>
-                        <attributeType name="Decimal"/>
-                        <attributeType name="Integer"/>
-                        <attributeType name="Long"/>
-            -->
+                        <attributeType name="String"/>
+                    </attributeTypes>
+                </property>
+                <property key="tooltipAttr1" type="attribute" entityProperty="nodeEntity1" required="false">
+                    <caption>Tooltip attribute (entity1)</caption>
+                    <category>Configuration</category>
+                    <description></description>
+                    <attributeTypes>
                         <attributeType name="String"/>
                     </attributeTypes>
                 </property>
@@ -108,17 +112,6 @@ At least 1 relationship should start at the same entity as the top-level entity.
                     <category>Configuration</category>
                     <description>(Only select this attribute if you chose usage option: 'Uses')</description>
                     <attributeTypes>
-            <!--
-                        <attributeType name="AutoNumber"/>
-                        <attributeType name="Boolean"/>
-                        <attributeType name="Currency"/>
-                        <attributeType name="DateTime"/>
-                        <attributeType name="Enum"/>
-                        <attributeType name="Float"/>
-                        <attributeType name="Decimal"/>
-                        <attributeType name="Integer"/>
-                        <attributeType name="Long"/>
-            -->
                         <attributeType name="String"/>
                     </attributeTypes>
                 </property>
