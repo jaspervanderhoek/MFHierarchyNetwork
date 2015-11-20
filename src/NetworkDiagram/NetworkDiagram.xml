@@ -136,15 +136,24 @@ At least 1 relationship should start at the same entity as the top-level entity.
                 </property>
             </properties>
         </property>
+        <property key="cacheBurst" type="attribute" required="false">
+            <caption>Cache Burst Attribute</caption>
+            <category>Interaction</category>
+            <description>If an attribute is selected the widget will only re-load if the value has changed. If no attribute is selected the widget will rebuild it's structure on every refresh.</description>
+            <attributeTypes>
+                <attributeType name="Integer"/>
+                <attributeType name="Long"/>
+            </attributeTypes>
+        </property>
         <property key="width" type="string" defaultValue="100%" required="false">
             <caption>Width</caption>
-            <category>Common</category>
+            <category>Interaction</category>
             <description></description>
         </property>	
-        <property key="height" type="string" defaultValue="500px" required="false">
+        <property key="height" type="string" defaultValue="" required="false">
             <caption>Height</caption>
-            <category>Common</category>
-            <description></description>
+            <category>Interaction</category>
+            <description>If left blank the widget will take up the size of the screen</description>
         </property>	
 <!--
         <property key="mfToExecute" type="microflow" entityProperty="../entity" required="false" defaultValue="">

@@ -32,7 +32,7 @@ define([
     "dojo/html",
     "dojo/_base/event",
     "NetworkDiagram/lib/jquery-1.11.2",
-    "NetworkDiagram/lib/vis.min"
+    "NetworkDiagram/lib/vis"
 ], function(declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, _jQuery, vis) {
     "use strict";
 
@@ -47,6 +47,7 @@ define([
         _alertDiv: null,
         
 		widht: "100%;",
+        height: "",
         
         // prep the variable for nodes and lines
         nodes : null,
@@ -56,6 +57,8 @@ define([
         entityMap: null,
         loaded: null,
 		isLoaded: false,
+        cacheBurst: null,
+        cacheBurstValue: null,
         
         // dojo.declare.constructor is called to construct the widget instance. Implement to initialize non-primitive properties.
         constructor: function () {
@@ -127,16 +130,27 @@ define([
 
             this._contextObj = obj;
             
-            this.resetStatus();
-            this._resetSubscriptions();
-            this._updateRendering();
+            var newCacheBurstVal = Math.floor((Math.random() * 1000000));;
+            
+            if( this.cacheBurst !== null ) {
+                newCacheBurstVal = obj.getAttribute( this.cacheBurst );
+            }
+            
+            if( newCacheBurstVal != this.cacheBurstValue ) {
+                this.cacheBurstValue = newCacheBurstVal;
+                
+                this.resetStatus();
+                this._resetSubscriptions();
+                this._updateRendering();
+            }
 
             callback();
         },
         
         // mxui.widget._WidgetBase.resize is called when the page's layout is recalculated. Implement to do sizing calculations. Prefer using CSS instead.
         resize: function(box) {
-            this.domNode.style.height=window.innerHeight + 'px';
+            if( this.height == "" || this.height == null ) 
+                this.domNode.style.height=window.innerHeight + 'px';
         },
 
         // mxui.widget._WidgetBase.uninitialize is called when the widget is destroyed. Implement to do special tear-down work.
@@ -325,7 +339,10 @@ define([
             };
 
             this.domNode.style.width=this.width;
-            this.domNode.style.height= window.innerHeight + 'px';
+            if( this.height == "" || this.height == null ) 
+                this.domNode.style.height= window.innerHeight + 'px';
+            else 
+                this.domNode.style.height = this.height;
             
             // initialize your network!
             var network = new vis.Network(this.domNode, data, options);   
