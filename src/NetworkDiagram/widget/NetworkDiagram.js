@@ -59,6 +59,7 @@ define([
 		isLoaded: false,
         cacheBurst: null,
         cacheBurstValue: null,
+        progressBar: false,
         
         // dojo.declare.constructor is called to construct the widget instance. Implement to initialize non-primitive properties.
         constructor: function () {
@@ -71,6 +72,10 @@ define([
         postCreate: function () {
             console.log(this.id + ".postCreate");
             this.resetStatus();
+            
+            if( this.progressBar ) 
+                this.domNode.innerHTML = "<div id=\"graphContainer\"></div><div id=\"loadingBar\"><div class=\"row\"><div class=\"col-xs-12 text-center\"><img src=\"images/logo1_trans.gif\"></div></div><div class=\"row\"><div class=\"col-xs-12 text-center\"><div class=\"outerBorder\"><div id=\"text\">0%</div><div id=\"border\"><div id=\"bar\"></div></div></div></div></div>";
+
             
             this.entityMap[this.nodeEntity] = { entityName: this.nodeEntity, 
                                                 displayAttr: this.displayAttr, 
@@ -85,13 +90,20 @@ define([
                 var association = relation.nodeEntity2.split('/'),
                     keyEntity='',assEntity='', color=null;
                 
-                //If entity 1 uses 2, entity 1 must be the key in loading the data
-                if( relation.usage == 'Entity1uses2' ) {
                     if( !this.relationConfig[ relation.nodeEntity1 ] ) {
                         this.relationConfig[ relation.nodeEntity1 ] = {entityName: relation.nodeEntity1, associations:[] };
                     }
-                    this.relationConfig[relation.nodeEntity1].associations.push( {id: relation.reference, assocationName: association[0], entityName: association[1] } );
+                    this.relationConfig[relation.nodeEntity1].associations.push( {id: relation.reference, associationName: association[0], entityName: association[1], usage: ( relation.usage == 'Entity1uses2' ? 'to' : 'from' ) } );
                     
+                
+                    if( !this.relationConfig[ association[1] ] ) {
+                        this.relationConfig[ association[1] ] = {entityName: association[1], associations:[] };
+                    }
+                    this.relationConfig[association[1]].associations.push( {id: relation.reference, associationName: association[0], entityName: relation.nodeEntity1, usage: ( relation.usage == 'Entity1uses2' ? 'from' : 'to' )  } );
+                    
+                //If entity 1 uses 2, entity 1 must be the key in loading the data
+                if( relation.usage == 'Entity1uses2' ) {
+                    this.loaded[association[1]] = 0;
                     this.entityMap[relation.reference] = { entityName: association[1], 
                                                            displayAttr: relation.displayAttr2, 
                                                            constraint: relation.constraint2, 
@@ -102,11 +114,7 @@ define([
 
                 //When entity 1 is used by based on entity 1 we should continue loading
                 else {
-                    if( !this.relationConfig[ association[1] ] ) {
-                        this.relationConfig[ association[1] ] = {entityName: association[1], associations:[] };
-                    }
-                    this.relationConfig[association[1]].associations.push( {id: relation.reference, assocationName: association[0], entityName: relation.nodeEntity1 } );
-                    
+                    this.loaded[relation.nodeEntity1] = 0;
                     this.entityMap[relation.reference] = { entityName: relation.nodeEntity1, 
                                                            displayAttr: relation.displayAttr1, 
                                                            constraint: relation.constraint1, 
@@ -163,7 +171,9 @@ define([
 
         // Rerender the interface.
         _updateRendering: function() {
-            this._loadData( this.entityMap[this.nodeEntity] );
+            for( var entityData in this.entityMap ) {
+                this._loadData( this.entityMap[entityData] );
+            }
         },
 
          _loadData: function ( config ) {
@@ -206,37 +216,48 @@ define([
             if( refConfig && refConfig.associations && refConfig.associations.length > 0 ) {
                 for( var associationDetails in refConfig.associations ) {
                     var config2 = refConfig.associations[associationDetails];
-                    var assName = refConfig.associations[associationDetails].assocationName,
+                    var assName = refConfig.associations[associationDetails].associationName,
                         entityName = refConfig.associations[associationDetails].entityName,
-                        nextAssociationId = refConfig.associations[associationDetails].id;
-
+                        nextAssociationId = refConfig.associations[associationDetails].id,
+                        usage = refConfig.associations[associationDetails].usage;
+                    
                     var relatedConfig = this.entityMap[nextAssociationId];
 
                     for( var objRef in objs ) {
                         var obj = objs[objRef];
                         var refLoadingId = entityName + obj.getGUID();
-                        if( this.loaded[refLoadingId] == null || this.loaded[refLoadingId] <= 1 ) {
-                            this.loaded[refLoadingId] = 1;
-                            
-                            //Add the object to the node configuration
-                            this._addNode(obj, config );
-
-                            //built the xpath to retrieve the objects
-                            var xpath = '//' + entityName + '[' + assName + '=\'' + obj.getGUID() + '\']';
-                            if( relatedConfig.constraint != null ) {
-                                xpath += relatedConfig.constraint.replace('[%CurrentObject%]', this._contextObj);
+                        
+                        if( obj.hasAttribute( assName ) ) {
+                            var refIdArr = obj.getReferences( assName );
+                            for( var i =0; i< refIdArr.length;i++ ) {
+                                console.log( 'adding edge: ' + refIdArr[i] + ' - ' + obj.getGUID());
+                                this.edges._addItem( {from: refIdArr[i], to: obj.getGUID(), arrows: usage } );
                             }
-                            
-                            var filters = {};
-                            filters.sort = [[relatedConfig.displayAttr, "ASC"]];
-                            mx.data.get({
-                                xpath: xpath,
-                                filter: filters,
-                                callback: lang.hitch(this, function (nextAssociationId, objConfig, refGuid, referencedObjs, ioArgs) {
-                                    this._fetchMicroflows(referencedObjs, objConfig, refGuid, nextAssociationId);
-                                }, nextAssociationId, relatedConfig, obj.getGUID())
-                            });
                         }
+                        //Add the object to the node configuration
+                        this._addNode(obj, config );
+//                        if( this.loaded[refLoadingId] == null || this.loaded[refLoadingId] <= 1 ) {
+//                            this.loaded[refLoadingId] = 1;
+//                            
+//                            //Add the object to the node configuration
+//                            this._addNode(obj, config );
+//
+//                            //built the xpath to retrieve the objects
+//                            var xpath = '//' + entityName + '[' + assName + '=\'' + obj.getGUID() + '\']';
+//                            if( relatedConfig.constraint != null ) {
+//                                xpath += relatedConfig.constraint.replace('[%CurrentObject%]', this._contextObj);
+//                            }
+//                            
+//                            var filters = {};
+//                            filters.sort = [[relatedConfig.displayAttr, "ASC"]];
+//                            mx.data.get({
+//                                xpath: xpath,
+//                                filter: filters,
+//                                callback: lang.hitch(this, function (nextAssociationId, objConfig, refGuid, referencedObjs, ioArgs) {
+//                                    this._fetchMicroflows(referencedObjs, objConfig, refGuid, nextAssociationId);
+//                                }, nextAssociationId, relatedConfig, obj.getGUID())
+//                            });
+//                        }
                     }
                 }
             }
@@ -270,7 +291,7 @@ define([
                     label: obj.getAttribute(config.displayAttr), 
                     title: ( config.tooltipAttr != null ? obj.getAttribute(config.tooltipAttr) : '<b>' + obj.getAttribute(config.displayAttr) + '</b>'), 
                     color: config.color,
-                    font: { size: 12 }, 
+                    font: { size: 13 }, 
                     value: nodeSize
                 } );
             }
@@ -300,11 +321,20 @@ define([
                 layout: { randomSeed: 2 },
 //				autoResize: true,
 //				height: '100%',
+				configure: {
+					filter:function (option, path) {
+						if (path.indexOf('physics') !== -1) {
+							return true;
+						}
+						return false;
+					},
+					showButton: true
+				},
                 nodes: {
                     shape: 'dot',
                     scaling: {
                         min: 10,
-                        max: 60
+                        max: 30
                     },
                     font: {
                         face: 'Tahoma'
@@ -325,14 +355,22 @@ define([
                 },
 				physics: {
 					enabled: true,
+                    /*"hierarchicalRepulsion": {
+                        "centralGravity": 0,
+                        "springLength": 200,
+                        "springConstant": 0.005,
+                        "damping": 0.5,
+						"nodeDistance": 300
+                    },*/
                     "barnesHut": {
                         "gravitationalConstant": -44178,
                         "centralGravity": 0,
-                        "springLength": 140,
+                        "springLength": 200,
                         "springConstant": 0.075,
                         "damping": 0.25,
                         "avoidOverlap": 0.92
                     },
+					//"timestep": 1,
                     "maxVelocity": 150,
                     "minVelocity": 10.07
 				}
@@ -344,28 +382,33 @@ define([
             else 
                 this.domNode.style.height = this.height;
             
+            
             // initialize your network!
-            var network = new vis.Network(this.domNode, data, options);   
+            var network = new vis.Network( ( this.progressBar ? this.domNode.childNodes[0] : this.domNode ), data, options);   
 
-//          network.on("click",neighbourhoodHighlight);
-//			network.on("stabilizationProgress", function(params) {
-//				this.doStabilizationStep(params);
-//			});
-//
-//			network.once("stabilizationIterationsDone", function() {
-//
-//				var positionsSize = 0, key;
-//				for (key in graph.positions) {
-//					if (graph.positions.hasOwnProperty(key)) positionsSize++;
-//				}
-//
-//				if (graph.styles.length > positionsSize){
-//					// new positions must be calculated and send to server
-//					network.storePositions();
-//					updateRemotePositions(data.nodes._data,beerGraphServices);
-//				}
-//				this.doStabilizationDone();
-//			});
+            if( this.progressBar ) {
+    //          network.on("click",neighbourhoodHighlight);
+                network.on("stabilizationProgress", function(params) {
+                    var maxWidth = $('#border').width();
+                    var minWidth = 20;
+                    var widthFactor = params.iterations/params.total;
+                    var width = Math.max(minWidth,maxWidth * widthFactor);
+
+                    document.getElementById('bar').style.width = width + 'px';
+                    document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                });
+
+                network.once("stabilizationIterationsDone", function() {
+
+                    document.getElementById('text').innerHTML = '100%';
+                    document.getElementById('bar').style.width = $('#border').width();
+                    document.getElementById('loadingBar').style.opacity = 0;
+                    // really clean the dom element
+                    setTimeout(function () {
+                    document.getElementById('loadingBar').style.display = 'none'
+                    }, 500);
+                });
+            }
         },
 		        
         // Reset subscriptions.
@@ -383,7 +426,7 @@ define([
                 var objectHandle = this.subscribe({
                     guid: this._contextObj.getGuid(),
                     callback: lang.hitch(this, function(guid) {
-                        this._updateRendering();
+                        this.update();
                     })
                 });
 
@@ -448,25 +491,6 @@ define([
             }
             return connectedNodes;
         }
-//		doStabilizationStep : function(params) {
-//			var maxWidth = $('#border').width();
-//			var minWidth = 20;
-//			var widthFactor = params.iterations/params.total;
-//			var width = Math.max(minWidth,maxWidth * widthFactor);
-//
-//			document.getElementById('bar').style.width = width + 'px';
-//			document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
-//		},
-//
-//		doStabilizationDone : function() {
-//			document.getElementById('text').innerHTML = '100%';
-//			document.getElementById('bar').style.width = $('#border').width();
-//			document.getElementById('loadingBar').style.opacity = 0;
-//			// really clean the dom element
-//			setTimeout(function () {
-//			document.getElementById('loadingBar').style.display = 'none'
-//			}, 500);
-//		}
         
         
         

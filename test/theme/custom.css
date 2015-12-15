@@ -1234,7 +1234,12 @@ body .mx-header .mx-sidebartoggle {
 .Filters .CheckboxSetSelector_Table {
   margin: 0px;
 }
-
+.Filters .radio-inline {
+    padding-top: 0px;
+}
+.Filters .radio-inline input {
+  margin-top: 0.25em;
+}
 
 
 .Filters .mx-groupbox,
@@ -1249,7 +1254,10 @@ body .mx-header .mx-sidebartoggle {
 }
 .Filters span,
 .Filters label {
-  font-size: 90%;
+  font-size: 85%;
+}
+.Filters .mx-templategrid-content-wrapper label {
+  padding: 0px;
 }
 .ModuleFilter .mx-groupbox-body {
 /*	position: absolute;
