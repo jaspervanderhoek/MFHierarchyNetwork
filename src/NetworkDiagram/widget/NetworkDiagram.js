@@ -51,15 +51,18 @@ define([
         
         // prep the variable for nodes and lines
         nodes : null,
+        allNodes : null,
         edges : null,
         
         relationConfig: null,
         entityMap: null,
-        loaded: null,
+        loaded: [],
 		isLoaded: false,
         cacheBurst: null,
         cacheBurstValue: null,
         progressBar: false,
+		highlightActive: false,
+		network: null,
         
         // dojo.declare.constructor is called to construct the widget instance. Implement to initialize non-primitive properties.
         constructor: function () {
@@ -76,58 +79,57 @@ define([
             if( this.progressBar ) 
                 this.domNode.innerHTML = "<div id=\"graphContainer\"></div><div id=\"loadingBar\"><div class=\"row\"><div class=\"col-xs-12 text-center\"><img src=\"images/logo1_trans.gif\"></div></div><div class=\"row\"><div class=\"col-xs-12 text-center\"><div class=\"outerBorder\"><div id=\"text\">0%</div><div id=\"border\"><div id=\"bar\"></div></div></div></div></div>";
 
-            
-            this.entityMap[this.nodeEntity] = { entityName: this.nodeEntity, 
-                                                displayAttr: this.displayAttr, 
-                                                constraint: this.constraint, 
-                                                color: this.displayColor,
-                                                nodeSize: this.mainNodeSize,
-                                                tooltipAttr: this.tooltipAttr  };
 
             for (var i=0; i<this.relationList.length; i++) {
                 var relation = this.relationList[i];
                 
-                var association = relation.nodeEntity2.split('/'),
+                var association = [],
                     keyEntity='',assEntity='', color=null;
+                
+                if( relation.nodeEntity2 != null )
+                    association = relation.nodeEntity2Ref.split('/');
+                else
+                    association = relation.nodeEntity2RefSet.split('/');
                 
                     if( !this.relationConfig[ relation.nodeEntity1 ] ) {
                         this.relationConfig[ relation.nodeEntity1 ] = {entityName: relation.nodeEntity1, associations:[] };
                     }
-                    this.relationConfig[relation.nodeEntity1].associations.push( {id: relation.reference, associationName: association[0], entityName: association[1], usage: ( relation.usage == 'Entity1uses2' ? 'to' : 'from' ) } );
+                    this.relationConfig[relation.nodeEntity1].associations.push( {id: relation.reference, associationName: association[0], entityName: association[1], usage: ( relation.usage == 'Entity1uses2' ? 'from' : 'to' ) } );
                     
                 
-                    if( !this.relationConfig[ association[1] ] ) {
-                        this.relationConfig[ association[1] ] = {entityName: association[1], associations:[] };
-                    }
-                    this.relationConfig[association[1]].associations.push( {id: relation.reference, associationName: association[0], entityName: relation.nodeEntity1, usage: ( relation.usage == 'Entity1uses2' ? 'from' : 'to' )  } );
-                    
-                //If entity 1 uses 2, entity 1 must be the key in loading the data
-                if( relation.usage == 'Entity1uses2' ) {
-                    this.loaded[association[1]] = 0;
-                    this.entityMap[relation.reference] = { entityName: association[1], 
-                                                           displayAttr: relation.displayAttr2, 
-                                                           constraint: relation.constraint2, 
-                                                           color: relation.displayColor,
-                                                           nodeSize: relation.nodeSize,
-                                                           tooltipAttr: relation.tooltipAttr1 };                
-                }
-
-                //When entity 1 is used by based on entity 1 we should continue loading
-                else {
-                    this.loaded[relation.nodeEntity1] = 0;
-                    this.entityMap[relation.reference] = { entityName: relation.nodeEntity1, 
-                                                           displayAttr: relation.displayAttr1, 
-                                                           constraint: relation.constraint1, 
-                                                           color: relation.displayColor,
-                                                           nodeSize: relation.nodeSize,
-                                                           tooltipAttr: relation.tooltipAttr1 };
-                }
+//                    if( !this.relationConfig[ association[1] ] ) {
+//                        this.relationConfig[ association[1] ] = {entityName: association[1], associations:[] };
+//                    }
+//                    this.relationConfig[association[1]].associations.push( {id: relation.reference, associationName: association[0], entityName: relation.nodeEntity1, usage: ( relation.usage == 'Entity1uses2' ? 'from' : 'to' )  } );
             }
+            
+            for (var i=0; i<this.entityList.length; i++) {
+                var entity = this.entityList[i];
+                
+                this.loaded[entity.nodeEntity] = 0;
+                this.entityMap[entity.nodeEntity] = { entityName: entity.nodeEntity, 
+                                                       displayAttr: entity.displayAttr, 
+                                                       constraint: entity.constraint, 
+                                                       color: entity.displayColor,
+                                                       nodeSize: entity.nodeSize,
+                                                       tooltipAttr: entity.tooltipAttr };
+            }
+            
+            var data = {
+                    nodes: this.nodes,
+                    edges: this.edges
+                };
+				
+				this._renderNetwork( data );
         },        
         resetStatus: function() {
             this.nodes = new vis.DataSet([]);
             this.edges = new vis.DataSet([]);
-            this.loaded = [];
+			
+			for( var load in this.loaded ) {
+                this.loaded[load] = 0;
+			}
+				
 			this.isLoaded = false;
         },
 
@@ -189,7 +191,7 @@ define([
                 xpath: xpath,
                 filter: filters,
                 callback: lang.hitch(this, function (objs) {
-                    this._fetchMicroflows(objs, config, null, this.nodeEntity );
+                    this._fetchMicroflows(objs, config, null, config.entityName );
                 })
             });
         },
@@ -221,6 +223,11 @@ define([
                         nextAssociationId = refConfig.associations[associationDetails].id,
                         usage = refConfig.associations[associationDetails].usage;
                     
+					if( usage == 'to' )
+						usage = {to:{scaleFactor:3} };
+					else 
+						usage = {from:{scaleFactor:3} };
+					
                     var relatedConfig = this.entityMap[nextAssociationId];
 
                     for( var objRef in objs ) {
@@ -277,7 +284,11 @@ define([
                     nodes: this.nodes,
                     edges: this.edges
                 };
-                this._renderNetwork( data );
+				
+				this.network.setData( data );
+				
+				// get a JSON object to be able to do the highlighting (on click)
+				this.allNodes = this.nodes.get({returnType:"Object"});
             }
         },
         
@@ -291,7 +302,6 @@ define([
                     label: obj.getAttribute(config.displayAttr), 
                     title: ( config.tooltipAttr != null ? obj.getAttribute(config.tooltipAttr) : '<b>' + obj.getAttribute(config.displayAttr) + '</b>'), 
                     color: config.color,
-                    font: { size: 13 }, 
                     value: nodeSize
                 } );
             }
@@ -318,7 +328,10 @@ define([
             
             
             var options = {
-                layout: { randomSeed: 2 },
+                layout: { 
+					randomSeed: 2,
+					improvedLayout: false
+				},
 //				autoResize: true,
 //				height: '100%',
 				configure: {
@@ -326,9 +339,22 @@ define([
 						if (path.indexOf('physics') !== -1) {
 							return true;
 						}
+						if (path.indexOf('nodes') !== -1) {
+							if ( path.indexOf('color') == -1 && 
+								 path.indexOf('background') == -1 &&
+								 option != 'color' && 
+								 option != 'background' ) {
+								return true;
+							}
+						}
 						return false;
 					},
 					showButton: true
+				},
+				manipulation: {
+					enabled: false,
+					initiallyActive: false,
+					deleteNode: true
 				},
                 nodes: {
                     shape: 'dot',
@@ -337,7 +363,8 @@ define([
                         max: 30
                     },
                     font: {
-                        face: 'Tahoma'
+                        face: 'Tahoma',
+						size: 13
                     }
                 },
                 edges: {
@@ -362,6 +389,7 @@ define([
                         "damping": 0.5,
 						"nodeDistance": 300
                     },*/
+					/*
                     "barnesHut": {
                         "gravitationalConstant": -44178,
                         "centralGravity": 0,
@@ -369,10 +397,23 @@ define([
                         "springConstant": 0.075,
                         "damping": 0.25,
                         "avoidOverlap": 0.92
-                    },
-					//"timestep": 1,
-                    "maxVelocity": 150,
-                    "minVelocity": 10.07
+                    },*/
+					
+					"forceAtlas2Based": {
+						"gravitationalConstant": -4000,
+						"centralGravity": 0.005,
+						"springLength": 300,
+						"springConstant": 0.08,
+						"damping": 0.85,
+						"avoidOverlap": 1
+					},
+					"solver": "forceAtlas2Based",
+					
+					
+					"maxVelocity": 150,
+					//"minVelocity": 10.07,
+					"minVelocity": 40,
+					"timestep": 0.2
 				}
             };
 
@@ -384,11 +425,18 @@ define([
             
             
             // initialize your network!
-            var network = new vis.Network( ( this.progressBar ? this.domNode.childNodes[0] : this.domNode ), data, options);   
+            this.network = new vis.Network( ( this.progressBar ? this.domNode.childNodes[0] : this.domNode ), data, options);
 
+			var self = this;
+			
+			this.network.setMxParam( self );
+			this.network.on("click", self.neighbourhoodHighlight);
+			this.network.on("doubleClick", self.executeMicroflow);
+			
+			
             if( this.progressBar ) {
     //          network.on("click",neighbourhoodHighlight);
-                network.on("stabilizationProgress", function(params) {
+                this.network.on("stabilizationProgress", function(params) {
                     var maxWidth = $('#border').width();
                     var minWidth = 20;
                     var widthFactor = params.iterations/params.total;
@@ -398,7 +446,7 @@ define([
                     document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
                 });
 
-                network.once("stabilizationIterationsDone", function() {
+                this.network.once("stabilizationIterationsDone", function() {
 
                     document.getElementById('text').innerHTML = '100%';
                     document.getElementById('bar').style.width = $('#border').width();
@@ -409,6 +457,97 @@ define([
                     }, 500);
                 });
             }
+        },
+		
+        
+        
+        executeMicroflow: function(params) {
+            var mxSelf = params.mxParam;
+            
+            //TODO configure a microflow, and execute here...
+            
+        },
+        
+        
+        neighbourhoodHighlight: function(params) {
+            var mxSelf = params.mxParam;
+            // if something is selected:
+            if (params.nodes.length > 0) {
+              mxSelf.highlightActive = true;
+              var i,j;
+              var selectedNode = params.nodes[0];
+              var degrees = 2;
+
+              // mark all nodes as hard to read.
+              for (var nodeId in mxSelf.allNodes) {
+                if (mxSelf.allNodes[nodeId].oriColor == null ) 
+                    mxSelf.allNodes[nodeId].oriColor = mxSelf.allNodes[nodeId].color;
+                
+                mxSelf.allNodes[nodeId].color = 'rgba(200,200,200,0.5)';
+                if (mxSelf.allNodes[nodeId].hiddenLabel == null) {
+                  mxSelf.allNodes[nodeId].hiddenLabel = mxSelf.allNodes[nodeId].label;
+                  mxSelf.allNodes[nodeId].label = null;
+                }
+              }
+              var connectedNodes = mxSelf.network.getConnectedNodes(selectedNode);
+              var allConnectedNodes = [];
+
+              // get the second degree nodes
+              for (i = 1; i < degrees; i++) {
+                for (j = 0; j < connectedNodes.length; j++) {
+                  allConnectedNodes = allConnectedNodes.concat(mxSelf.network.getConnectedNodes(connectedNodes[j]));
+                }
+              }
+
+              // all second degree nodes get a different color and their label back
+              for (i = 0; i < allConnectedNodes.length; i++) {
+                if (mxSelf.allNodes[allConnectedNodes[i]].oriColor === null ) 
+                    mxSelf.allNodes[allConnectedNodes[i]].oriColor = mxSelf.allNodes[allConnectedNodes[i]].color;
+                  
+                mxSelf.allNodes[allConnectedNodes[i]].color = 'rgba(150,150,150,0.75)';
+                if (mxSelf.allNodes[allConnectedNodes[i]].hiddenLabel !== null) {
+                  mxSelf.allNodes[allConnectedNodes[i]].label = mxSelf.allNodes[allConnectedNodes[i]].hiddenLabel;
+                  mxSelf.allNodes[allConnectedNodes[i]].hiddenLabel = null;
+                }
+              }
+
+              // all first degree nodes get their own color and their label back
+              for (i = 0; i < connectedNodes.length; i++) {
+                mxSelf.allNodes[connectedNodes[i]].color = mxSelf.allNodes[connectedNodes[i]].oriColor;
+                
+                if (mxSelf.allNodes[connectedNodes[i]].hiddenLabel !== null) {
+                  mxSelf.allNodes[connectedNodes[i]].label = mxSelf.allNodes[connectedNodes[i]].hiddenLabel;
+                  mxSelf.allNodes[connectedNodes[i]].hiddenLabel = null;
+                }
+              }
+
+              // the main node gets its own color and its label back.
+              mxSelf.allNodes[selectedNode].color = mxSelf.allNodes[selectedNode].oriColor;
+              if (mxSelf.allNodes[selectedNode].hiddenLabel !== null) {
+                mxSelf.allNodes[selectedNode].label = mxSelf.allNodes[selectedNode].hiddenLabel;
+                mxSelf.allNodes[selectedNode].hiddenLabel = null;
+              }
+            }
+            else if (mxSelf.highlightActive === true) {
+              // reset all nodes
+              for (var nodeId in mxSelf.allNodes) {
+                mxSelf.allNodes[nodeId].color = mxSelf.allNodes[nodeId].oriColor;
+                if (mxSelf.allNodes[nodeId].hiddenLabel !== null) {
+                  mxSelf.allNodes[nodeId].label = mxSelf.allNodes[nodeId].hiddenLabel;
+                  mxSelf.allNodes[nodeId].hiddenLabel = null;
+                }
+              }
+              mxSelf.highlightActive = false
+            }
+
+            // transform the object into an array
+            var updateArray = [];
+            for (nodeId in mxSelf.allNodes) {
+              if (mxSelf.allNodes.hasOwnProperty(nodeId)) {
+                updateArray.push(mxSelf.allNodes[nodeId]);
+              }
+            }
+            mxSelf.nodes.update(updateArray);
         },
 		        
         // Reset subscriptions.

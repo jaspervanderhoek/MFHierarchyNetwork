@@ -27233,6 +27233,10 @@ return /******/ (function(modules) { // webpackBootstrap
     }
   };
 
+  Network.prototype.setMxParam = function( param ) {
+	this.selectionHandler.mxParam = param;
+  };
+  
   /**
    * Update the this.body.nodeIndices with the most recent node index list
    * @private
@@ -38478,11 +38482,12 @@ return /******/ (function(modules) { // webpackBootstrap
   var util = __webpack_require__(1);
 
   var SelectionHandler = (function () {
-    function SelectionHandler(body, canvas) {
+    function SelectionHandler(body, canvas, mxParam) {
       var _this = this;
 
       _classCallCheck(this, SelectionHandler);
 
+	  this.mxParam = mxParam;
       this.body = body;
       this.canvas = canvas;
       this.selectionObj = { nodes: [], edges: [] };
@@ -38574,6 +38579,9 @@ return /******/ (function(modules) { // webpackBootstrap
         if (oldSelection !== undefined) {
           properties["previousSelection"] = oldSelection;
         }
+		
+		properties.mxParam = this.mxParam;
+		
         this.body.emitter.emit(eventType, properties);
       }
     }, {
