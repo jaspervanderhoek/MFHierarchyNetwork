@@ -34,8 +34,16 @@
 /* override some bootstrap styles screwing up the timelines css */
 
 .vis [class*="span"] {
-  min-height: 0;
-  width: auto;
+    min-height: 0;
+    width: auto;
+}
+
+
+.networkdiagram-configure {
+    padding-top: 30px;
+    background-color: #e4e9f0;
+    min-height: 20px;
+    display: inline-block;
 }
 
 div.vis-configuration {
@@ -46,8 +54,8 @@ div.vis-configuration {
 }
 
 div.vis-configuration-wrapper {
-    display:block;
-    width:700px;
+    display: block;
+    width: 540px;
 }
 
 
@@ -86,7 +94,7 @@ div.vis-configuration.vis-config-button.hover{
 
 div.vis-configuration.vis-config-item{
     display:block;
-    float:left;
+    float:initial;
     width:495px;
     height:25px;
     vertical-align: middle;

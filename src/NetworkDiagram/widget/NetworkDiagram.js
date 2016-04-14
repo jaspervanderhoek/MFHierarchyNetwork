@@ -32,15 +32,19 @@ define([
     "dojo/html",
     "dojo/_base/event",
     "NetworkDiagram/lib/jquery-1.11.2",
-    "NetworkDiagram/lib/vis"
-], function(declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, _jQuery, vis) {
+    "NetworkDiagram/lib/vis",
+    "dojo/text!NetworkDiagram/widget/template/NetworkDiagram.html"
+], function(declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, _jQuery, vis, widgetTemplate) {
     "use strict";
 
     var $ = _jQuery.noConflict(true);
     
     // Declare widget's prototype.
-    return declare("NetworkDiagram.widget.NetworkDiagram", [ _WidgetBase ], {
-
+    return declare("NetworkDiagram.widget.NetworkDiagram", [ _WidgetBase, _TemplatedMixin ], {
+        
+        // _TemplatedMixin will create our dom node using this HTML template.
+        templateString: widgetTemplate,
+        
         // Internal variables. Non-primitives created in the prototype are shared between all widget instances.
         _handles: null,
         _contextObj: null,
@@ -64,6 +68,9 @@ define([
 		highlightActive: false,
 		network: null,
         
+        domNodeNetworkMap: null,
+        domNodeConfigure: null,
+        
         // dojo.declare.constructor is called to construct the widget instance. Implement to initialize non-primitive properties.
         constructor: function () {
             this._handles = [];
@@ -76,8 +83,10 @@ define([
             console.log(this.id + ".postCreate");
             this.resetStatus();
             
+            this.domNodeNetworkMap = this.domNode.getElementsByClassName("networkdiagram-map")[0];
+            this.domNodeConfigure = this.domNode.getElementsByClassName("networkdiagram-configure")[0];
             if( this.progressBar ) 
-                this.domNode.innerHTML = "<div id=\"graphContainer\"></div><div id=\"loadingBar\"><div class=\"row\"><div class=\"col-xs-12 text-center\"><img src=\"images/logo1_trans.gif\"></div></div><div class=\"row\"><div class=\"col-xs-12 text-center\"><div class=\"outerBorder\"><div id=\"text\">0%</div><div id=\"border\"><div id=\"bar\"></div></div></div></div></div>";
+                this.domNodeNetworkMap.innerHTML = "<div id=\"graphContainer\"></div><div id=\"loadingBar\"><div class=\"row\"><div class=\"col-xs-12 text-center\"><img src=\"images/logo1_trans.gif\"></div></div><div class=\"row\"><div class=\"col-xs-12 text-center\"><div class=\"outerBorder\"><div id=\"text\">0%</div><div id=\"border\"><div id=\"bar\"></div></div></div></div></div>";
 
 
             for (var i=0; i<this.relationList.length; i++) {
@@ -160,7 +169,7 @@ define([
         // mxui.widget._WidgetBase.resize is called when the page's layout is recalculated. Implement to do sizing calculations. Prefer using CSS instead.
         resize: function(box) {
             if( this.height == "" || this.height == null ) 
-                this.domNode.style.height=window.innerHeight + 'px';
+                this.domNodeNetworkMap.style.height=window.innerHeight + 'px';
         },
 
         // mxui.widget._WidgetBase.uninitialize is called when the widget is destroyed. Implement to do special tear-down work.
@@ -349,7 +358,8 @@ define([
 						}
 						return false;
 					},
-					showButton: true
+					showButton: true,
+                    container: this.domNodeConfigure
 				},
 				manipulation: {
 					enabled: false,
@@ -423,11 +433,12 @@ define([
             else 
                 this.domNode.style.height = this.height;
             
+  
+			var self = this;
             
             // initialize your network!
-            this.network = new vis.Network( ( this.progressBar ? this.domNode.childNodes[0] : this.domNode ), data, options);
+            this.network = new vis.Network( ( self.progressBar ? self.domNodeNetworkMap.childNodes[0] : self.domNodeNetworkMap ), data, options);
 
-			var self = this;
 			
 			this.network.setMxParam( self );
 			this.network.on("click", self.neighbourhoodHighlight);

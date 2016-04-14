@@ -1,10 +1,9 @@
 <div class="networkdiagram">
-    <form>
-        <div class="input-group" data-dojo-attach-point="inputNodes">
-            <input type="text" class="form-control" placeholder="#rrggbb" data-dojo-attach-point="colorInputNode">
-            <div class="input-group-addon"><input type="color" data-dojo-attach-point="colorSelectNode"></div>
+    <div class="networkdiagram-configure-wrapper" data-dojo-attach-point="networkControl">
+        <div class="networkdiagram-configure" data-dojo-attach-point="networkControl">
+            <!--This will hold the configuration options -->
         </div>
-    </form>
-    <div class="networkdiagram-infoTextNode" data-dojo-attach-point="infoTextNode" />
+    </div>
+    <div class="networkdiagram-map" data-dojo-attach-point="networkMap"> </div>
 </div>
 
